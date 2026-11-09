@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Books API</title>
+<style>
+/* ==========================================================================
+   Books API — plain black and white, set like an ordinary printed book.
+   No colour, no gradients, no shadows, no animation, no external resources.
+   ========================================================================== */
+
+:root {
+  --black:  #000;
+  --ink:    #111;
+  --grey:   #555;
+  --grey-2: #777;
+  --rule:   #000;
+  --rule-2: #bbb;
+  --rule-3: #e2e2e2;
+  --paper:  #fff;
+  --wash:   #f6f6f6;
+
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, "Times New Roman", serif;
+  --mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --small: var(--serif);
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--paper); }
+
+body {
+  margin: 0;
+  padding: 0;
+  color: var(--ink);
+  background: var(--paper);
+  font: 16px/1.65 var(--serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+.sheet {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 26px 70px;
+}
+
+/* ==========================================================================
+   Half title & title page
+   ========================================================================== */
+.titlepage { padding: 56px 0 0; text-align: center; }
+
+.overline {
+  margin: 0 0 26px;
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+h1 {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: .01em;
+}
+
+h1 .amp { font-style: italic; }
+
+/* A single hairline with a centred stop: the only ornament in the book. */
+.rule-orn {
+  width: 220px;
+  height: 9px;
+  margin: 26px auto 0;
+  display: block;
+}
+
+.preface {
+  max-width: 60ch;
+  margin: 24px auto 0;
+  font-size: 15.5px;
+  color: var(--ink);
+  text-align: left;
+  text-indent: 1.6em;
+}
+
+.preface code, .note code, td code, li code, .tally code {
+  font-family: var(--mono);
+  font-size: .88em;
+}
+
+.preface b { font-weight: 700; }
+
+.imprint {
+  margin: 30px 0 0;
+  font-size: 10.5px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--grey-2);
+}
+
+/* ==========================================================================
+   Contents — two columns divided by a plain fold rule
+   ========================================================================== */
+.contents {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 44px;
+  margin-top: 46px;
+  padding-top: 34px;
+  border-top: 1px solid var(--rule);
+}
+
+.col-left { padding-right: 4px; border-right: 1px solid var(--rule-2); }
+.col-right { padding-left: 4px; }
+
+/* --- chapters ---------------------------------------------------------- */
+.chapter { margin-bottom: 40px; }
+.chapter:last-child { margin-bottom: 0; }
+
+.chapter-head { text-align: center; margin-bottom: 20px; }
+
+.chapter-no {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--grey);
+  margin-bottom: 7px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: .02em;
+}
+
+.chapter-head .path {
+  display: block;
+  margin-top: 7px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--grey);
+}
+
+.rule-under {
+  width: 62px;
+  height: 1px;
+  background: var(--ink);
+  margin: 14px auto 0;
+}
+
+/* --- forms ------------------------------------------------------------- */
+label {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 10.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.row { display: flex; gap: 16px; flex-wrap: wrap; }
+.row > div { flex: 1 1 180px; }
+
+input[type=text], input[type=search] {
+  width: 100%;
+  padding: 7px 9px;
+  font: 15px var(--serif);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input::placeholder { color: var(--grey-2); font-style: italic; }
+input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+/* --- buttons: plain rules, no shadows ---------------------------------- */
+button {
+  padding: 7px 14px;
+  font: 11px var(--serif);
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+button:hover { background: var(--wash); }
+button:active { background: #ececec; }
+button:disabled { color: var(--grey-2); border-color: var(--rule-2); cursor: progress; }
+
+button.primary { background: var(--ink); color: var(--paper); }
+button.primary:hover { background: #000; }
+button.primary:disabled { background: var(--paper); color: var(--grey-2); border-color: var(--rule-2); }
+
+button.small { padding: 4px 9px; font-size: 10px; }
+
+/* --- toolbar ----------------------------------------------------------- */
+.toolbar { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 18px; }
+.toolbar .field { flex: 1 1 200px; }
+.toolbar .tools { display: flex; gap: 9px; flex-wrap: wrap; }
+
+/* --- the catalogue ----------------------------------------------------- */
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+
+thead th {
+  text-align: left;
+  padding: 0 8px 7px 0;
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--grey);
+  border-bottom: 1px solid var(--ink);
+}
+thead th.num, thead th.actions { text-align: right; }
+thead th.actions { padding-right: 0; }
+
+tbody td {
+  padding: 9px 8px 9px 0;
+  border-bottom: 1px solid var(--rule-3);
+  vertical-align: baseline;
+}
+tbody tr:last-child td { border-bottom: 1px solid var(--ink); }
+
+td.num {
+  width: 44px;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--grey);
+  font-variant-numeric: tabular-nums;
+}
+
+td.title { font-size: 15.5px; }
+td.author { font-size: 13.5px; font-style: italic; color: var(--grey); }
+
+td.actions { text-align: right; white-space: nowrap; width: 1%; padding-right: 0; }
+td.actions button { margin-left: 5px; }
+
+.empty {
+  padding: 22px 0;
+  text-align: center;
+  font-style: italic;
+  color: var(--grey);
+}
+
+.note {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-3);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--grey);
+}
+.note b { color: var(--ink); font-weight: 700; }
+
+/* --- the day book ------------------------------------------------------ */
+.tally {
+  margin: 0 0 12px;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--grey);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tally .count { margin-left: auto; }
+
+.ledger {
+  max-height: 560px;
+  overflow: auto;
+  border-top: 1px solid var(--ink);
+}
+
+.entry {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid var(--rule-3);
+}
+.entry:last-child { border-bottom: 1px solid var(--ink); }
+
+.entry .head {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+
+.entry .verb {
+  font-weight: 700;
+  letter-spacing: .06em;
+  border: 1px solid var(--ink);
+  padding: 1px 6px;
+  font-size: 10.5px;
+}
+
+.entry .path { color: var(--ink); word-break: break-all; }
+
+.entry .status {
+  margin-left: auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.entry .status.fail { text-decoration: underline; }
+
+.entry pre {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+.entry pre.none { color: var(--grey); font-style: italic; border-style: dashed; }
+
+.muted { color: var(--grey); font-style: italic; font-size: 14px; }
+
+/* --- colophon ---------------------------------------------------------- */
+.colophon {
+  margin-top: 48px;
+  padding-top: 26px;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+}
+
+.colophon h3 {
+  margin: 0 0 12px;
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.endpoints {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 2;
+  color: var(--ink);
+}
+
+.colophon p.imprint { margin: 20px 0 0; }
+
+/* --- responsive -------------------------------------------------------- */
+@media (max-width: 860px) {
+  .contents { grid-template-columns: 1fr; gap: 0; }
+  .col-left { border-right: 0; padding-right: 0; padding-bottom: 34px; border-bottom: 1px solid var(--rule-2); margin-bottom: 34px; }
+  .col-right { padding-left: 0; }
+  h1 { font-size: 32px; }
+  .titlepage { padding-top: 38px; }
+  .ledger { max-height: 420px; }
+}
+
+@media print {
+  .ledger { max-height: none; overflow: visible; }
+  .toolbar, .tally button, td.actions { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <!-- ========================== title page ========================== -->
+  <header class="titlepage">
+    <p class="overline">Node.js &amp; Express &middot; In Memory</p>
+    <h1>Books <span class="amp">&amp;</span> the API</h1>
+
+    <svg class="rule-orn" viewBox="0 0 220 9" aria-hidden="true">
+      <line x1="0" y1="4.5" x2="98" y2="4.5" stroke="#000" stroke-width="1"/>
+      <line x1="122" y1="4.5" x2="220" y2="4.5" stroke="#000" stroke-width="1"/>
+      <rect x="106.5" y="1" width="7" height="7" transform="rotate(45 110 4.5)" fill="#000"/>
+    </svg>
+
+    <p class="preface">
+      A working catalogue for the Express CRUD API. Every action below issues a real HTTP
+      request; the day book records the method, path, status code and JSON response exactly
+      as the server returned it. The shelves are held in memory, so restarting with
+      <code>npm start</code> restores the original three volumes.
+    </p>
+
+    <p class="imprint">Get &middot; Post &middot; Put &middot; Patch &middot; Delete</p>
+  </header>
+
+  <!-- =========================== contents =========================== -->
+  <div class="contents">
+
+    <!-- ---------- left column ---------- -->
+    <div class="col-left">
+
+      <section class="chapter">
+        <div class="chapter-head">
+          <span class="chapter-no">Chapter I</span>
+          <h2>Add a Volume</h2>
+          <span class="path">POST /books</span>
+          <span class="rule-under"></span>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="title">Title</label>
+            <input id="title" type="text" placeholder="The Hobbit" autocomplete="off" />
+          </div>
+          <div>
+            <label for="author">Author</label>
+            <input id="author" type="text" placeholder="J.R.R. Tolkien" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:14px">
+          <button class="primary" id="add">Add volume</button>
+          <button id="addBad">Send an invalid body</button>
+        </div>
+
+        <p class="note">
+          The <code>id</code> is assigned by the server. A blank field, a malformed body or a
+          client-supplied <code>id</code> returns <code>400</code> with a list of validation
+          errors &mdash; press <b>Send an invalid body</b> to see one.
+        </p>
+      </section>
+
+      <section class="chapter">
+        <div class="chapter-head">
+          <span class="chapter-no">Chapter II</span>
+          <h2>The Catalogue</h2>
+          <span class="path">GET /books</span>
+          <span class="rule-under"></span>
+        </div>
+
+        <div class="toolbar">
+          <div class="field">
+            <label for="q">Search the shelves</label>
+            <input id="q" type="search" placeholder="try “clean” or “tolkien”…" autocomplete="off" />
+          </div>
+          <div class="tools">
+            <button id="reload">Refresh</button>
+            <button class="primary" id="demo">Run full CRUD demo</button>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th class="num">No.</th>
+              <th>Title</th>
+              <th>Author</th>
+              <th class="actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="empty" id="empty" hidden>No volumes match your enquiry.</div>
+
+        <p class="note">
+          <b>Get</b> reads one record, <b>Edit</b> sends <code>PUT</code> (full replacement),
+          <b>Author&hellip;</b> sends <code>PATCH</code> (partial), and <b>Delete</b> returns
+          <code>204 No Content</code>.
+        </p>
+      </section>
+
+    </div>
+
+    <!-- ---------- right column ---------- -->
+    <div class="col-right">
+      <section class="chapter">
+        <div class="chapter-head">
+          <span class="chapter-no">Chapter III</span>
+          <h2>The Day Book</h2>
+          <span class="path">request log</span>
+          <span class="rule-under"></span>
+        </div>
+
+        <div class="tally">
+          <button class="small" id="clearLog">Clear the page</button>
+          <span class="count" id="tally">0 succeeded &middot; 0 failed &middot; last &mdash;</span>
+        </div>
+
+        <div class="ledger" id="log">
+          <p class="muted">Nothing entered yet. Turn to Chapter II and run the demonstration.</p>
+        </div>
+      </section>
+    </div>
+
+  </div>
+
+  <!-- =========================== colophon =========================== -->
+  <footer class="colophon">
+    <h3>Colophon</h3>
+    <ul class="endpoints">
+      <li>GET /books</li>
+      <li>GET /books/:id</li>
+      <li>POST /books</li>
+      <li>PUT /books/:id</li>
+      <li>PATCH /books/:id</li>
+      <li>DELETE /books/:id</li>
+      <li>GET /health</li>
+    </ul>
+    <p class="imprint">Set in old style &middot; printed on the server at localhost:3000</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var stats = { ok: 0, err: 0, last: '—' };
+  var logEl = document.getElementById('log');
+  var firstEntry = true;
+
+  /* ---------- one place that performs and logs every request ---------- */
+  function call(method, path, body) {
+    var opts = { method: method, headers: {} };
+    if (body !== undefined) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = typeof body === 'string' ? body : JSON.stringify(body);
+    }
+    return fetch(path, opts).then(function (res) {
+      return res.text().then(function (text) {
+        var parsed = null;
+        try { parsed = text ? JSON.parse(text) : null; } catch (e) { parsed = text; }
+        log(method, path, res.status, parsed);
+        return { status: res.status, body: parsed };
+      });
+    }).catch(function (e) {
+      log(method, path, 'ERR', String(e));
+      throw e;
+    });
+  }
+
+  function log(method, path, status, payload) {
+    if (firstEntry) { logEl.innerHTML = ''; firstEntry = false; }
+
+    var cls = String(status)[0];
+    if (cls === '2') stats.ok++;
+    else if (cls === '4' || cls === '5') stats.err++;
+    stats.last = status;
+
+    var entry = document.createElement('article');
+    entry.className = 'entry';
+
+    var head = document.createElement('div');
+    head.className = 'head';
+
+    var verb = document.createElement('span');
+    verb.className = 'verb';
+    verb.textContent = method;
+
+    var url = document.createElement('span');
+    url.className = 'path';
+    url.textContent = path;
+
+    var code = document.createElement('span');
+    code.className = 'status' + (cls === '2' ? '' : ' fail');
+    code.textContent = status;
+
+    head.appendChild(verb);
+    head.appendChild(url);
+    head.appendChild(code);
+
+    var pre = document.createElement('pre');
+    if (payload === null) {
+      pre.className = 'none';
+      pre.textContent = '(no content — 204)';
+    } else {
+      pre.textContent = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
+    }
+
+    entry.appendChild(head);
+    entry.appendChild(pre);
+    logEl.insertBefore(entry, logEl.firstChild);
+
+    document.getElementById('tally').textContent =
+      stats.ok + ' succeeded · ' + stats.err + ' failed · last ' + stats.last;
+  }
+
+  /* ---------- catalogue rendering ---------- */
+  function refresh() {
+    var q = document.getElementById('q').value.trim();
+    var path = q ? '/books?search=' + encodeURIComponent(q) : '/books';
+    return call('GET', path).then(function (r) {
+      var list = (r.body && r.body.data) || [];
+      var rows = document.getElementById('rows');
+      rows.innerHTML = '';
+      document.getElementById('empty').hidden = list.length > 0;
+      list.forEach(function (b) { rows.appendChild(rowFor(b)); });
+    });
+  }
+
+  function rowFor(b) {
+    var tr = document.createElement('tr');
+
+    var num = document.createElement('td');
+    num.className = 'num';
+    num.textContent = b.id;
+
+    var title = document.createElement('td');
+    title.className = 'title';
+    title.textContent = b.title;
+
+    var author = document.createElement('td');
+    author.className = 'author';
+    author.textContent = b.author;
+
+    var td = document.createElement('td');
+    td.className = 'actions';
+    [
+      btn('Get', function () { call('GET', '/books/' + b.id); }),
+      btn('Edit', function () {
+        var t = prompt('New title:', b.title); if (t === null) return;
+        var a = prompt('New author:', b.author); if (a === null) return;
+        call('PUT', '/books/' + b.id, { title: t, author: a }).then(refresh);
+      }),
+      btn('Author', function () {
+        var a = prompt('PATCH — new author only:', b.author); if (a === null) return;
+        call('PATCH', '/books/' + b.id, { author: a }).then(refresh);
+      }),
+      btn('Delete', function () {
+        if (!confirm('DELETE /books/' + b.id + ' ?')) return;
+        call('DELETE', '/books/' + b.id).then(refresh);
+      })
+    ].forEach(function (x) { td.appendChild(x); });
+
+    tr.appendChild(num); tr.appendChild(title); tr.appendChild(author); tr.appendChild(td);
+    return tr;
+  }
+
+  function btn(label, onClick) {
+    var b = document.createElement('button');
+    b.className = 'small';
+    b.textContent = label;
+    b.onclick = onClick;
+    return b;
+  }
+
+  /* ---------- wiring ---------- */
+  document.getElementById('add').onclick = function () {
+    var t = document.getElementById('title').value;
+    var a = document.getElementById('author').value;
+    call('POST', '/books', { title: t, author: a }).then(function (r) {
+      if (r.status === 201) {
+        document.getElementById('title').value = '';
+        document.getElementById('author').value = '';
+        refresh();
+      }
+    });
+  };
+
+  // Deliberately invalid: demonstrates the 400 + validation-details path.
+  document.getElementById('addBad').onclick = function () {
+    call('POST', '/books', { title: '   ' });
+  };
+
+  document.getElementById('reload').onclick = refresh;
+
+  document.getElementById('clearLog').onclick = function () {
+    logEl.innerHTML = '<p class="muted">Nothing entered yet.</p>';
+    firstEntry = true;
+    stats = { ok: 0, err: 0, last: '—' };
+    document.getElementById('tally').textContent = '0 succeeded · 0 failed · last —';
+  };
+
+  var t;
+  document.getElementById('q').oninput = function () { clearTimeout(t); t = setTimeout(refresh, 250); };
+
+  ['title', 'author'].forEach(function (id) {
+    document.getElementById(id).addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') document.getElementById('add').click();
+    });
+  });
+
+  // Walks through every endpoint, including the failure cases, so the status
+  // codes can be compared side by side.
+  document.getElementById('demo').onclick = function () {
+    var b = document.getElementById('demo');
+    b.disabled = true; b.textContent = 'Running…';
+    var done = function () { b.disabled = false; b.textContent = 'Run full CRUD demo'; };
+
+    call('GET', '/health')
+      .then(function () { return call('GET', '/books'); })
+      .then(function () { return call('POST', '/books', { title: 'Dune', author: 'Frank Herbert' }); })
+      .then(function (r) {
+        var id = r.body && r.body.data && r.body.data.id;
+        if (!id) return null;
+        return call('GET', '/books/' + id)
+          .then(function () { return call('PUT', '/books/' + id, { title: 'Dune (2019 ed.)', author: 'Frank Herbert' }); })
+          .then(function () { return call('PATCH', '/books/' + id, { author: 'Herbert, Frank' }); })
+          .then(function () { return call('GET', '/books/' + id); })
+          .then(function () { return call('POST', '/books', { title: 'No author on purpose' }); })
+          .then(function () { return call('GET', '/books/999999'); })
+          .then(function () { return call('DELETE', '/books/' + id); })
+          .then(function () { return call('GET', '/books/' + id); });
+      })
+      .then(refresh)
+      .then(done)
+      .catch(done);
+  };
+
+  refresh();
+})();
+</script>
+</body>
+</html>

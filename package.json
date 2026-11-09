@@ -1,0 +1,23 @@
+{
+  "name": "books-api",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "bash test.sh"
+  },
+  "keywords": [
+    "express",
+    "rest",
+    "api",
+    "crud",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "A simple REST API to manage a list of books (CRUD, in-memory, Node.js + Express)",
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}

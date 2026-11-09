@@ -1,0 +1,167 @@
+{
+  "info": {
+    "name": "Books API",
+    "description": "CRUD API for managing a list of books (in-memory, Node.js + Express). Import into Postman, then click 'Send'. Set the `base_url` variable if your server is not on http://localhost:3000.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "book_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] }
+      }
+    },
+    {
+      "name": "List all books",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/books", "host": ["{{base_url}}"], "path": ["books"] },
+        "description": "Optional query params: ?search=, ?title=, ?author="
+      }
+    },
+    {
+      "name": "List books (filtered)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/books?search=clean",
+          "host": ["{{base_url}}"],
+          "path": ["books"],
+          "query": [{ "key": "search", "value": "clean" }]
+        }
+      }
+    },
+    {
+      "name": "Get one book",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/books/{{book_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["books", "{{book_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Create book",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', () => pm.response.to.have.status(201));",
+              "const json = pm.response.json();",
+              "if (json.data && json.data.id) pm.collectionVariables.set('book_id', json.data.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"The Hobbit\",\n  \"author\": \"J.R.R. Tolkien\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/books", "host": ["{{base_url}}"], "path": ["books"] },
+        "description": "Saves the new id into the {{book_id}} collection variable automatically."
+      }
+    },
+    {
+      "name": "Create book (should fail 400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": { "type": "text/javascript", "exec": ["pm.test('status is 400', () => pm.response.to.have.status(400));"] }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"title\": \"Missing author field\"\n}" },
+        "url": { "raw": "{{base_url}}/books", "host": ["{{base_url}}"], "path": ["books"] }
+      }
+    },
+    {
+      "name": "Update book (PUT)",
+      "event": [
+        {
+          "listen": "test",
+          "script": { "type": "text/javascript", "exec": ["pm.test('status is 200', () => pm.response.to.have.status(200));"] }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"The Hobbit (Revised Edition)\",\n  \"author\": \"J.R.R. Tolkien\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/books/{{book_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["books", "{{book_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Update book (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"author\": \"Tolkien, J.R.R.\"\n}" },
+        "url": {
+          "raw": "{{base_url}}/books/{{book_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["books", "{{book_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Delete book",
+      "event": [
+        {
+          "listen": "test",
+          "script": { "type": "text/javascript", "exec": ["pm.test('status is 204', () => pm.response.to.have.status(204));"] }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/books/{{book_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["books", "{{book_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Get deleted book (should fail 404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": { "type": "text/javascript", "exec": ["pm.test('status is 404', () => pm.response.to.have.status(404));"] }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/books/{{book_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["books", "{{book_id}}"]
+        }
+      }
+    }
+  ]
+}
