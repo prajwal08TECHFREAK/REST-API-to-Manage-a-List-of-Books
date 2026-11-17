@@ -13,7 +13,7 @@ npm install     # installs express
 npm start       # starts the server on http://localhost:3000
 ```
 
-Then open <http://localhost:3000> in a browser — you get a tiny web UI you can click through.
+Then open <http://localhost:3000> in a browser — you get a web UI you can click through.
 Prefer the terminal? Run the automated smoke test in a **second** terminal:
 
 ```bash
@@ -28,6 +28,82 @@ PORT=4000 npm start         # run on a different port
 BASE=http://localhost:4000 npm test
 ```
 
+> **The API only works while `server.js` is running.** If you close the terminal, the API is gone. See [Hosting this project](#hosting-this-project-read-this-if-you-published-it-to-github-pages) below.
+
+---
+
+## ⚠️ Hosting this project (read this if you published it to GitHub Pages)
+
+**GitHub Pages cannot run this API.** It is a static file host: it serves HTML, CSS, JavaScript and images, and nothing else. It cannot start a Node process, so `server.js` never executes and every endpoint returns a `404` HTML page.
+
+Two things go wrong when you push this repo to Pages as-is:
+
+1. **The homepage shows the README instead of the UI.** Pages builds with Jekyll, and Jekyll's `jekyll-readme-index` plugin turns `README.md` into `index.html` whenever the repository root has no `index.html` of its own. In this repo the UI lives at the root as `index.html`, so that no longer happens — and a `.nojekyll` file is included to skip Jekyll entirely and serve the files exactly as they are.
+2. **Even with the UI served, the API calls fail.** The page loads, then `fetch('/books')` hits GitHub's servers, which reply `404 text/html`. The catalogue stays empty.
+
+### What this repo does about it
+
+`index.html` checks for a live API on load by calling `GET /health` and looking for a JSON response. There are three outcomes:
+
+| Situation | What you see |
+| --- | --- |
+| Page served **by Express** (`npm start`, <http://localhost:3000>) | The normal UI, talking to the real API. No notice. |
+| Page on static hosting, **no API reachable** | A notice explaining the situation, and the UI switches to **demo mode**. |
+| Page on static hosting **plus `?api=<url>`** | The UI talks to that remote API. A notice confirms the connection. |
+
+**Demo mode** is a copy of the API reimplemented in the browser: the same routes, the same validation rules, the same response shapes and the same status codes (`201`, `204`, `400`, `404`), stored in your browser's `localStorage`. It is a faithful rehearsal of the real thing — useful for showing the project on a portfolio page — but it is *not* the Express server, and the data never leaves that one browser. The only endpoint that differs is `GET /health`, which reports `"mode": "demo (in-browser)"` instead of `"uptimeSeconds"`.
+
+The notice offers two buttons: **Reset the simulated shelf** (clears `localStorage` and restores the three seed books) and **Re-check for a live server**.
+
+### Option A — run it locally (what the project is for)
+
+```bash
+git clone https://github.com/<you>/<repo>.git
+cd <repo>
+npm install
+npm start
+# open http://localhost:3000
+```
+
+### Option B — deploy the API to a host that runs Node
+
+Keep the UI on GitHub Pages and put `server.js` somewhere that can execute it. `server.js` already reads `process.env.PORT`, which is what these platforms expect.
+
+**Render** (free tier)
+
+1. Push the repo to GitHub.
+2. <https://render.com> → **New** → **Web Service** → connect the repository.
+3. Build command: `npm install`
+4. Start command: `npm start`
+5. Deploy. You get a URL like `https://books-api-xxxx.onrender.com`.
+6. Open your Pages site as
+   `https://<you>.github.io/<repo>/?api=https://books-api-xxxx.onrender.com`
+
+**Railway** — create a project **from a GitHub repo**; it detects Node and runs `npm start`, and injects `PORT` automatically. Same `?api=` step afterwards.
+
+**Fly.io** — `fly launch` generates a Dockerfile and `fly.toml`; set the internal port to 3000.
+
+Other workable choices: Koyeb, Azure App Service, a VPS with `pm2`, or Docker anywhere.
+
+Free tiers usually sleep when idle, so the first request after a pause can take 10–30 seconds.
+
+### CORS is already handled
+
+Because the UI and the API are then on **different origins**, the browser blocks the calls unless the API sends CORS headers. `server.js` includes a small hand-written CORS middleware (no extra dependency) that answers the `OPTIONS` preflight and allows `GET, POST, PUT, PATCH, DELETE`:
+
+```bash
+npm start                                # allows any origin (fine for a demo)
+CORS_ORIGIN=https://<you>.github.io npm start   # restrict it to your site
+```
+
+Restrict the origin before you add authentication or anything private. `Access-Control-Allow-Origin: *` means any website can call your API.
+
+### Other ways to get a live API on a static site
+
+- **Serverless functions.** Port the handlers to Vercel, Netlify or Cloudflare Workers functions and point `?api=` at them. The route logic transfers almost unchanged; the in-memory array does not survive between invocations, so you would need a real store.
+- **A mock API service.** JSONPlaceholder-style hosts can fake GET requests but not your validation rules.
+- **Skip the UI.** Publish the repo as documentation only — the README, the curl examples and the Postman collection all stand on their own, and anyone reviewing the project can run it locally.
+
 ---
 
 ## Endpoints
@@ -41,7 +117,9 @@ BASE=http://localhost:4000 npm test
 | PATCH  | `/books/:id`    | Partially update a book           | `200`   | `400`, `404`    |
 | DELETE | `/books/:id`    | Delete a book                     | `204`   | `400`, `404`    |
 | GET    | `/health`       | Liveness check                    | `200`   | —               |
-| GET    | `/`             | API index + browser UI            | `200`   | —               |
+| GET    | `/`             | API index (JSON) or the web UI    | `200`   | —               |
+
+`GET /` uses content negotiation: a browser sending `Accept: text/html` receives `index.html`; curl and Postman receive a JSON index of the endpoints.
 
 Query filters on `GET /books`: `?search=` (title or author), `?title=`, `?author=`.
 
@@ -131,39 +209,55 @@ curl "http://localhost:3000/books?search=hobbit"
 
 ---
 
+## The web UI
+
+`index.html` is a single self-contained file — no build step, no framework, no external fonts, images or CDNs, so it renders the same offline as online. Set in black and white like a printed book.
+
+- **Chapter I — Add a Volume:** `POST /books`, plus a button that deliberately sends an invalid body so you can read the `400` response.
+- **Chapter II — The Catalogue:** `GET /books` with a live search box; each row has **Get**, **Edit** (`PUT`), **Author** (`PATCH`) and **Delete**.
+- **Chapter III — The Day Book:** every request logged with its method, path, status code and formatted JSON response, plus a running tally.
+- **Run full CRUD demo:** walks all seven endpoints in order, including a `400` and two `404`s, so the status codes can be compared side by side.
+
+It talks to the API with **relative URLs**, which is why it works when Express serves it and why it needs `?api=` when it is hosted somewhere else.
+
+---
+
 ## Testing with Postman
 
 1. Start the server: `npm start`
 2. In Postman: **Import** → select `Books-API.postman_collection.json`
 3. Pick any request and hit **Send**.
 
-The collection includes a test script on *Create book* that saves the new `id`
-into the `{{book_id}}` variable, so the Get / Update / Delete requests point at
-the book you just created. It also has two "should fail" requests (400 and 404)
-with assertions, so you can run the whole collection with **Collection Runner**
-and see green ticks.
+The collection includes a test script on *Create book* that saves the new `id` into the `book_id` variable, so the Get / Update / Delete requests point at the book you just created. It also has two "should fail" requests (400 and 404) with assertions, so you can run the whole collection with **Collection Runner** and see green ticks.
 
-Collection variables you can change: `base_url` (default `http://localhost:3000`), `book_id`.
+Collection variables you can change: `base_url` (default `http://localhost:3000` — set this to your deployed URL), `book_id`.
 
 ---
 
 ## Project structure
 
 ```
-books-api/
+.
 ├── server.js                             # the whole API (commented line by line)
+├── index.html                            # the web UI, served at / by Express
+│                                         #   and directly by GitHub Pages
 ├── test.sh                               # curl-based end-to-end smoke test
 ├── Books-API.postman_collection.json     # importable Postman collection
-├── public/index.html                     # small browser UI served at /
 ├── package.json
+├── package-lock.json
+├── .nojekyll                             # tells GitHub Pages to skip Jekyll
+├── .gitignore
 └── README.md
 ```
+
+`index.html` sits at the repository root, not in a `public/` folder, because GitHub Pages only serves `index.html` as a homepage from the root. Express delivers it with `res.sendFile` rather than `express.static(__dirname)` — serving the project root statically would also expose `server.js`, `package.json` and any `.env` file to whoever asked for them.
 
 ### How the server is put together
 
 | Piece                                | What it does                                                          |
 | ------------------------------------ | --------------------------------------------------------------------- |
 | `app.use(express.json())`            | Parses JSON request bodies into `req.body`. Without it, `req.body` is `undefined`. |
+| CORS middleware                      | Adds `Access-Control-Allow-*` headers and answers the `OPTIONS` preflight, so a UI on another origin can call the API. |
 | `let books = [...]`                  | The in-memory store. It is lost on every restart.                     |
 | `let nextId = ...`                   | Auto-increment counter for new books.                                 |
 | `validateBook(body, partialAllowed)` | Shared validation: required non-empty strings, rejects unknown fields and client-set `id`. |
@@ -183,16 +277,18 @@ books-api/
 
 ## Notes & limitations
 
-- **No database.** Data lives in a plain array and disappears when the process stops. Swap the array for a real store (SQLite, Postgres, MongoDB) by changing only the route handlers.
+- **No database.** Data lives in a plain array and disappears when the process stops — including on every deploy. Swap the array for a real store (a JSON file, SQLite, Postgres, MongoDB) by changing only the route handlers.
+- **Not safe to scale horizontally.** Two instances would each keep their own array. Fine for one process, wrong for a cluster.
 - **Express 5** is installed (`express@^5`). Differences from Express 4 worth knowing: async route handlers that reject are forwarded to the error handler automatically, and route-path syntax is stricter.
-- **No CORS headers.** Fine for curl/Postman/same-origin browser use. Add `npm i cors` + `app.use(cors())` if you want to call it from a different origin.
+- **CORS is wide open by default.** Set `CORS_ORIGIN` to your site's origin before adding anything sensitive.
 - **No pagination** — a real list endpoint would add `?page=` and `?limit=`.
 - **`DELETE` returns 204 with no body.** If your Postman test expects JSON, use `200` + `{ "message": "Book deleted." }` instead.
 
 ## Next steps if you want to extend it
 
 1. Split routes into `routes/books.js` with `express.Router()` and mount via `app.use('/books', booksRouter)`.
-2. Add `year`, `isbn` or `genre` fields (remember to update `validateBook`).
+2. Add `year`, `isbn` or `genre` fields (remember to update `validateBook`, and the demo-mode copy in `index.html`).
 3. Persist to a JSON file with `fs.writeFileSync`, or move to SQLite via `better-sqlite3`.
 4. Add real unit tests with Jest or Node's built-in `node:test` + `supertest`.
-5. Add rate limiting (`express-rate-limit`) and request validation with `zod`.
+5. Add rate limiting (`express-rate-limit`) and schema validation with `zod`.
+6. Add a `Dockerfile` so the API deploys anywhere unchanged.

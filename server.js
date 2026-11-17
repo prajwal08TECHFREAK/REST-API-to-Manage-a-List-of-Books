@@ -35,6 +35,32 @@ app.use((req, res, next) => {
 });
 
 // ---------------------------------------------------------------------------
+// CORS
+// ---------------------------------------------------------------------------
+// Lets a browser page on a DIFFERENT origin call this API — for example the
+// UI hosted on GitHub Pages while the API runs on Render or Railway.
+// Written by hand (no `cors` package) so the project stays dependency-light.
+//
+// "*" means any site may call it. That is fine for a demo with no secrets and
+// no authentication. For a real service, restrict it:
+//   CORS_ORIGIN=https://yourname.github.io npm start
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  if (CORS_ORIGIN !== '*') res.setHeader('Vary', 'Origin');
+
+  // Browsers send a preflight OPTIONS request before any cross-origin call
+  // that sets Content-Type. Answer it here so it never reaches the routes.
+  if (req.method === 'OPTIONS') return res.status(204).end();
+
+  next();
+});
+
+// ---------------------------------------------------------------------------
 // In-memory "database"
 // ---------------------------------------------------------------------------
 
@@ -112,7 +138,7 @@ app.get('/', (req, res) => {
   const wantsHtml = accept.includes('text/html');
 
   if (wantsHtml) {
-    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    return res.sendFile(path.join(__dirname, 'index.html'));
   }
 
   res.json({
@@ -229,10 +255,12 @@ app.delete('/books/:id', (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Static files (the browser playground) — registered AFTER the API routes so
-// they can never shadow an endpoint like /books.
+// Web UI
 // ---------------------------------------------------------------------------
-app.use(express.static(path.join(__dirname, 'public')));
+// index.html lives at the project root so GitHub Pages can serve it directly.
+// It is delivered by the GET / route above via res.sendFile — deliberately NOT
+// with express.static(__dirname), which would also expose server.js,
+// package.json and .env to anyone who asked for them.
 
 // ---------------------------------------------------------------------------
 // Error handling
