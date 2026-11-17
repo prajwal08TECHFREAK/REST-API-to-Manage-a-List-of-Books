@@ -47,13 +47,13 @@ Two things go wrong when you push this repo to Pages as-is:
 
 | Situation | What you see |
 | --- | --- |
-| Page served **by Express** (`npm start`, <http://localhost:3000>) | The normal UI, talking to the real API. No notice. |
-| Page on static hosting, **no API reachable** | A notice explaining the situation, and the UI switches to **demo mode**. |
-| Page on static hosting **plus `?api=<url>`** | The UI talks to that remote API. A notice confirms the connection. |
+| Page served **by Express** (`npm start`, <http://localhost:3000>) | The normal UI, talking to the real API. No footnote. |
+| Page on static hosting, **no API reachable** | A one-line footnote, and the UI switches to **demo mode**. |
+| Page on static hosting **plus `?api=<url>`** | The UI talks to that remote API. The footnote confirms the connection. |
 
 **Demo mode** is a copy of the API reimplemented in the browser: the same routes, the same validation rules, the same response shapes and the same status codes (`201`, `204`, `400`, `404`), stored in your browser's `localStorage`. It is a faithful rehearsal of the real thing — useful for showing the project on a portfolio page — but it is *not* the Express server, and the data never leaves that one browser. The only endpoint that differs is `GET /health`, which reports `"mode": "demo (in-browser)"` instead of `"uptimeSeconds"`.
 
-The notice offers two buttons: **Reset the simulated shelf** (clears `localStorage` and restores the three seed books) and **Re-check for a live server**.
+The footnote carries two small text links: **reset the shelf** (clears `localStorage` and restores the three seed books) and **look for a live server** (reloads and probes again). Nothing else on the page mentions the fallback — the aim is a page that reads like a book, not like a console. The technical explanation lives here in the README instead.
 
 ### Option A — run it locally (what the project is for)
 
@@ -215,7 +215,7 @@ curl "http://localhost:3000/books?search=hobbit"
 
 - **Chapter I — Add a Volume:** `POST /books`, plus a button that deliberately sends an invalid body so you can read the `400` response.
 - **Chapter II — The Catalogue:** `GET /books` with a live search box; each row has **Get**, **Edit** (`PUT`), **Author** (`PATCH`) and **Delete**.
-- **Chapter III — The Day Book:** every request logged with its method, path, status code and formatted JSON response, plus a running tally.
+- **Chapter III — The Day Book:** each request is logged as a plain-English line — the HTTP verb, what it did (*"Added a volume"*, *"Withdrew volume 4"*) and the status code. The request path and the formatted JSON response are folded away behind a **response** toggle, so the page shows no code until you ask for it. A running tally sits above the ledger.
 - **Run full CRUD demo:** walks all seven endpoints in order, including a `400` and two `404`s, so the status codes can be compared side by side.
 
 It talks to the API with **relative URLs**, which is why it works when Express serves it and why it needs `?api=` when it is hosted somewhere else.

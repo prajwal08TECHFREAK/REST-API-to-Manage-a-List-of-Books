@@ -295,26 +295,49 @@ td.actions button { margin-left: 5px; }
   align-items: baseline;
   gap: 9px;
   flex-wrap: wrap;
-  font-family: var(--mono);
-  font-size: 12.5px;
 }
 
 .entry .verb {
-  font-weight: 700;
+  font: 700 10.5px var(--mono);
   letter-spacing: .06em;
   border: 1px solid var(--ink);
   padding: 1px 6px;
-  font-size: 10.5px;
 }
 
-.entry .path { color: var(--ink); word-break: break-all; }
+/* Plain-language description of what the request did. */
+.entry .what { font-size: 14.5px; color: var(--ink); }
 
 .entry .status {
   margin-left: auto;
-  font-weight: 700;
+  font: 700 12px var(--mono);
   font-variant-numeric: tabular-nums;
 }
 .entry .status.fail { text-decoration: underline; }
+
+/* --- the response, folded away until asked for ------------------------- */
+.resp { margin-top: 8px; }
+
+.resp summary {
+  display: inline-block;
+  font: 400 10.5px var(--serif);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--grey);
+  cursor: pointer;
+  list-style: none;
+}
+.resp summary::-webkit-details-marker { display: none; }
+.resp summary::before { content: "+ "; letter-spacing: 0; }
+.resp[open] summary::before { content: "\2013 "; letter-spacing: 0; }
+.resp summary:hover { color: var(--ink); text-decoration: underline; }
+
+.reqpath {
+  margin: 9px 0 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--grey);
+  word-break: break-all;
+}
 
 .entry pre {
   margin: 8px 0 0;
@@ -333,37 +356,38 @@ td.actions button { margin-left: 5px; }
 
 .muted { color: var(--grey); font-style: italic; font-size: 14px; }
 
-/* --- notice: shown when this page is not talking to a live server -------- */
-.notice {
-  margin: 40px 0 0;
-  padding: 16px 20px;
-  border: 1px solid var(--ink);
-  background: var(--wash);
-  font-size: 14.5px;
+/* --- footnote: one quiet line under the title page ---------------------- */
+.footnote {
+  margin: 30px auto 0;
+  max-width: 64ch;
+  font-size: 13px;
+  font-style: italic;
   line-height: 1.65;
-  text-align: left;
+  color: var(--grey);
+  text-align: center;
 }
 
-.notice h2 {
-  margin: 0 0 8px;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
+.footnote .mark { color: var(--ink); font-style: normal; margin-right: 5px; }
+.footnote .sep { margin: 0 7px; color: var(--rule-2); font-style: normal; }
 
-.notice p { margin: 0 0 10px; }
-.notice p:last-of-type { margin-bottom: 0; }
-.notice code { font-family: var(--mono); font-size: .88em; }
-.notice b { font-weight: 700; }
-.notice .tools { margin-top: 14px; display: flex; gap: 9px; flex-wrap: wrap; }
-
-.notice ol {
-  margin: 0 0 10px;
-  padding-left: 1.4em;
+/* Text links inside the footnote must not inherit the letterpress button. */
+.footnote button.link {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  font: italic 13px var(--serif);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--grey);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule-2);
+  border-radius: 0;
+  box-shadow: none;
+  cursor: pointer;
 }
-.notice ol li { margin-bottom: 5px; }
+.footnote button.link:hover { color: var(--ink); background: none; border-bottom-color: var(--ink); }
+.footnote button.link:active { background: none; }
 
 /* --- colophon ---------------------------------------------------------- */
 .colophon {
@@ -426,21 +450,16 @@ td.actions button { margin-left: 5px; }
     </svg>
 
     <p class="preface">
-      A working catalogue for the Express CRUD API. Every action below issues a real HTTP
-      request; the day book records the method, path, status code and JSON response exactly
-      as the server returned it. The shelves are held in memory, so restarting with
-      <code>npm start</code> restores the original three volumes.
+      A working catalogue for the books API. Every action below issues a real request, and
+      the day book records what was asked for and what came back. The shelves are held in
+      memory, so restarting the server restores the original three volumes.
     </p>
 
     <p class="imprint">Get &middot; Post &middot; Put &middot; Patch &middot; Delete</p>
   </header>
 
-  <!-- ==================== notice (filled in by script) ==================== -->
-  <section class="notice" id="notice" hidden>
-    <h2 id="notice-title">Notice</h2>
-    <div id="notice-body"></div>
-    <div class="tools" id="notice-tools"></div>
-  </section>
+  <!-- ============ footnote, filled in by the script only when needed ============ -->
+  <p class="footnote" id="notice" hidden></p>
 
   <!-- =========================== contents =========================== -->
   <div class="contents">
@@ -473,9 +492,9 @@ td.actions button { margin-left: 5px; }
         </div>
 
         <p class="note">
-          The <code>id</code> is assigned by the server. A blank field, a malformed body or a
-          client-supplied <code>id</code> returns <code>400</code> with a list of validation
-          errors &mdash; press <b>Send an invalid body</b> to see one.
+          Each volume is numbered by the server itself. A blank field, a malformed entry or a
+          number supplied by the caller is refused, with an explanation of what was wrong
+          &mdash; press <b>Send an invalid body</b> to see one.
         </p>
       </section>
 
@@ -512,9 +531,9 @@ td.actions button { margin-left: 5px; }
         <div class="empty" id="empty" hidden>No volumes match your enquiry.</div>
 
         <p class="note">
-          <b>Get</b> reads one record, <b>Edit</b> sends <code>PUT</code> (full replacement),
-          <b>Author&hellip;</b> sends <code>PATCH</code> (partial), and <b>Delete</b> returns
-          <code>204 No Content</code>.
+          <b>Get</b> reads a single volume, <b>Edit</b> replaces both of its details,
+          <b>Author</b> corrects the author alone, and <b>Delete</b> withdraws it from the
+          shelf. Each is logged in the day book opposite.
         </p>
       </section>
 
@@ -555,7 +574,7 @@ td.actions button { margin-left: 5px; }
       <li>DELETE /books/:id</li>
       <li>GET /health</li>
     </ul>
-    <p class="imprint">Set in old style &middot; printed on the server at localhost:3000</p>
+    <p class="imprint">Set in old style &middot; printed on demand</p>
   </footer>
 
 </div>
@@ -742,21 +761,51 @@ td.actions button { margin-left: 5px; }
   }
 
   /* ---------- startup: probe for a live API, else fall back ---------- */
-  function makeButton(label, onClick) {
+  function footnoteLink(label, onClick) {
     var b = document.createElement('button');
-    b.className = 'small';
+    b.className = 'link';
+    b.type = 'button';
     b.textContent = label;
     b.onclick = onClick;
     return b;
   }
 
-  function showNotice(title, html, buttons) {
-    document.getElementById('notice-title').textContent = title;
-    document.getElementById('notice-body').innerHTML = html;
-    var tools = document.getElementById('notice-tools');
-    tools.innerHTML = '';
-    (buttons || []).forEach(function (b) { tools.appendChild(b); });
-    document.getElementById('notice').hidden = false;
+  function footnoteSep() {
+    var s = document.createElement('span');
+    s.className = 'sep';
+    s.textContent = '\u00b7';
+    return s;
+  }
+
+  // One quiet line under the title page. No markup, no code, no instructions —
+  // the full explanation belongs in the README, not on the front of the book.
+  function showFootnote(kind) {
+    var n = document.getElementById('notice');
+    n.innerHTML = '';
+
+    var mark = document.createElement('span');
+    mark.className = 'mark';
+    mark.textContent = '*';
+    n.appendChild(mark);
+
+    var text = document.createElement('span');
+
+    if (kind === 'remote') {
+      text.textContent =
+        'This copy is connected to a live server; every entry in the day book is real.';
+      n.appendChild(text);
+    } else {
+      text.textContent =
+        'This copy runs on a simulated shelf: requests are answered inside this ' +
+        'browser, and nothing is sent to a server.';
+      n.appendChild(text);
+      n.appendChild(footnoteSep());
+      n.appendChild(footnoteLink('reset the shelf', demoReset));
+      n.appendChild(footnoteSep());
+      n.appendChild(footnoteLink('look for a live server', function () { window.location.reload(); }));
+    }
+
+    n.hidden = false;
   }
 
   // A live API answers /health with JSON. Static hosting answers with a 404
@@ -773,39 +822,43 @@ td.actions button { margin-left: 5px; }
   function boot() {
     return probe().then(function (live) {
       if (live) {
-        if (API_BASE) {
-          showNotice('Connected to a remote API',
-            '<p>This page is talking to <code>' + API_BASE + '</code>. Every request below is real.</p>',
-            []);
-        }
+        // Served by Express on the same origin: say nothing at all.
+        if (API_BASE) showFootnote('remote');
         return refresh();
       }
 
+      // No server answered. Fall back to the in-browser simulation and leave
+      // a single footnote to say so.
       demoMode = true;
       demoLoad();
-      showNotice(
-        'No server running — showing a simulated API',
-        '<p>This page is being served as a <b>static file</b>, so <code>server.js</code> is not ' +
-        'running and nothing can answer <code>/books</code>. GitHub Pages, for example, hosts only ' +
-        'HTML, CSS and JavaScript — it cannot start a Node process.</p>' +
-        '<p>The catalogue below is therefore driven by an <b>in-browser simulation</b> of the same ' +
-        'API: identical routes, validation rules, response shapes and status codes, saved to your ' +
-        'browser&rsquo;s <code>localStorage</code>. It is a faithful rehearsal, not the real thing — ' +
-        'and the data stays in this browser only.</p>' +
-        '<p>To use the real API, either:</p>' +
-        '<ol>' +
-        '<li>run it locally &mdash; <code>git clone</code>, <code>npm install</code>, ' +
-        '<code>npm start</code>, then open <code>http://localhost:3000</code>; or</li>' +
-        '<li>deploy <code>server.js</code> to a host that runs Node (Render, Railway, Fly.io), then ' +
-        'reopen this page as <code>?api=https://your-app.onrender.com</code>.</li>' +
-        '</ol>',
-        [
-          makeButton('Reset the simulated shelf', demoReset),
-          makeButton('Re-check for a live server', function () { window.location.reload(); })
-        ]
-      );
+      showFootnote('demo');
       return refresh();
     });
+  }
+
+  // Plain-language wording for each request, so the day book reads like a
+  // librarian's ledger rather than a console.
+  function describe(method, path) {
+    var p = String(path).split('?')[0];
+    var filtered = String(path).indexOf('?') !== -1;
+
+    if (p === '/health') return 'Checked that the press is running';
+
+    if (p === '/books') {
+      if (method === 'GET') return filtered ? 'Searched the catalogue' : 'Read the catalogue';
+      if (method === 'POST') return 'Added a volume';
+    }
+
+    var m = p.match(/^\/books\/([^/]+)$/);
+    if (m) {
+      var no = m[1];
+      if (method === 'GET')    return 'Read volume ' + no;
+      if (method === 'PUT')    return 'Rebound volume ' + no;
+      if (method === 'PATCH')  return 'Corrected volume ' + no;
+      if (method === 'DELETE') return 'Withdrew volume ' + no;
+    }
+
+    return 'Asked for something the server does not hold';
   }
 
   function log(method, path, status, payload) {
@@ -826,17 +879,31 @@ td.actions button { margin-left: 5px; }
     verb.className = 'verb';
     verb.textContent = method;
 
-    var url = document.createElement('span');
-    url.className = 'path';
-    url.textContent = path;
+    var what = document.createElement('span');
+    what.className = 'what';
+    what.textContent = describe(method, path);
 
     var code = document.createElement('span');
     code.className = 'status' + (cls === '2' ? '' : ' fail');
     code.textContent = status;
 
     head.appendChild(verb);
-    head.appendChild(url);
+    head.appendChild(what);
     head.appendChild(code);
+    entry.appendChild(head);
+
+    // The request path and the raw JSON, folded away until asked for.
+    var fold = document.createElement('details');
+    fold.className = 'resp';
+
+    var summary = document.createElement('summary');
+    summary.textContent = 'response';
+    fold.appendChild(summary);
+
+    var reqpath = document.createElement('div');
+    reqpath.className = 'reqpath';
+    reqpath.textContent = method + ' ' + path;
+    fold.appendChild(reqpath);
 
     var pre = document.createElement('pre');
     if (payload === null) {
@@ -845,9 +912,9 @@ td.actions button { margin-left: 5px; }
     } else {
       pre.textContent = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
     }
+    fold.appendChild(pre);
 
-    entry.appendChild(head);
-    entry.appendChild(pre);
+    entry.appendChild(fold);
     logEl.insertBefore(entry, logEl.firstChild);
 
     document.getElementById('tally').textContent =
